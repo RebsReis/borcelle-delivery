@@ -1,0 +1,39 @@
+# Ambiente completo local: docker compose up --build
+# Site: http://localhost:3000 · API: http://localhost:8000/docs
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: borcelle
+      POSTGRES_PASSWORD: borcelle
+      POSTGRES_DB: borcelle
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U borcelle"]
+      interval: 5s
+      retries: 10
+    ports: ["5432:5432"]
+
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://borcelle:borcelle@db:5432/borcelle
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8000:8000"]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        API_INTERNAL_URL: http://backend:8000
+    environment:
+      API_INTERNAL_URL: http://backend:8000
+    depends_on: [backend]
+    ports: ["3000:3000"]
+
+volumes:
+  pgdata:

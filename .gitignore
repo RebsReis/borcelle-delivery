@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# Node / Next
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+# Ambiente
+.env
+.env.local
+.env.*.local
+# SO / editores
+.DS_Store
+.vscode/
+.idea/
