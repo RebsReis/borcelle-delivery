@@ -1,104 +1,54 @@
-# Borcelle Delivery
+# Borcelle Hamburgueria — Protótipo
 
-Plataforma própria de pedidos online da **Borcelle Hamburgueria**: cardápio interativo, personalização de produtos, carrinho, checkout em etapas, pagamentos pelo Mercado Pago e acompanhamento do pedido em tempo real.
+Protótipo navegável da plataforma de pedidos online da **Borcelle Hamburgueria**, para apresentação. Roda só no navegador: cardápio, pedidos e pagamentos são **simulados** e nada é cobrado.
 
-Identidade visual: Design System *Urban Burger & Vintage Street Food* (Anton + Montserrat, paleta `#D4261B` / `#F2E3D0`), em `frontend/src/app/globals.css`.
+Design System *Urban Burger & Vintage Street Food*: Anton + Montserrat, paleta `#D4261B` / `#F2E3D0` / `#321B13`, tokens em `src/app/globals.css`.
 
-## Status
+## O que dá para demonstrar
 
-| Fase | Escopo | Situação |
-|---|---|---|
-| **1** | Cardápio, busca e categorias, personalização com grupos obrigatórios/opcionais, carrinho persistente com upsell e cupons, checkout em 5 etapas, CEP + áreas de entrega, agendamento, PIX / cartão / dinheiro / cartão na entrega / carteira Mercado Pago, webhooks, acompanhamento em tempo real, PWA, LGPD, analytics | ✅ Pronta |
-| 2 | Área do cliente com login, painel administrativo (dashboard, Kanban, produtos, marketing, configurações), fidelidade | A fazer |
+- **Home** com hero de impacto, tipografia gigante ao fundo, faixa animada e oferta em formato de ticket
+- **Cardápio** com busca, categorias fixas com rolagem automática, selos, promoções, recomendados e produto indisponível
+- **Personalização** (janela no desktop, painel deslizante no celular): ponto da carne, retirar ingredientes, adicionais, molhos, acompanhamento e bebida, com limites e preço atualizando ao vivo
+- **Carrinho** salvo no aparelho, com edição, sugestões de venda (batata, bebida, bacon, virar combo) e cupons
+- **Checkout em 5 etapas**: identificação sem cadastro, delivery ou retirada, agora ou agendado, endereço com CEP (ViaCEP) e área de entrega, pagamento e revisão
+- **Pagamentos simulados**: PIX (QR ilustrativo, copia e cola, contagem regressiva e botão "Simular pagamento aprovado"), cartão de crédito com parcelas, débito, cartão na entrega e dinheiro com troco
+- **Acompanhamento** com linha do tempo que avança sozinha (recebido → confirmado → em preparação → pronto → saiu para entrega → entregue, em ~2 min)
+- Meus pedidos, Minha conta (dados salvos no aparelho), aviso de cookies (LGPD), app instalável (PWA)
 
-Até a fase 2, a operação da loja (mudar status, estornar) é feita pela API administrativa provisória — veja [docs/OPERACAO.md](docs/OPERACAO.md).
+### Dados para testar
 
-## Stack
+| O quê | Valor |
+|---|---|
+| Cupons | `BEMVINDO10` (10% acima de R$ 40), `FRETEGRATIS` (acima de R$ 60), `BORCELLE5` (R$ 5 acima de R$ 30) |
+| CEPs atendidos | São Paulo capital (01000-000 a 05999-999 e Zona Leste 08000-000 a 08499-999) e São José dos Campos (12209-000 a 12248-999) |
+| Cartão aprovado | `4111 1111 1111 1111`, qualquer nome, validade futura e CVV |
+| Cartão recusado | `4000 0000 0000 0002` |
 
-- **Frontend:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS · GSAP + ScrollTrigger · Zustand · React Hook Form + Zod · Mercado Pago SDK React (Card Payment Brick)
-- **Backend:** FastAPI · SQLAlchemy 2 · Alembic · PostgreSQL 16 · SSE para status do pedido
-- **Integrações:** Mercado Pago, ViaCEP, Meta Conversions API e WhatsApp Cloud API (opcionais)
+## Rodar
 
-```
-backend/   API FastAPI (app/), migrations (alembic/), testes (tests/)
-frontend/  Next.js (src/app páginas, src/components, src/store, src/lib)
-docs/      Arquitetura, pagamentos, operação e publicação
-```
-
-## Rodar localmente
-
-### Com Docker (mais simples)
-
-```bash
-cp backend/.env.example backend/.env    # preencha o que tiver
-docker compose up --build
-```
-
-Site em http://localhost:3000 e API em http://localhost:8000/docs. O banco é criado, migrado e populado com o cardápio demonstrativo automaticamente.
-
-### Sem Docker
-
-Requisitos: Python 3.12+, Node 22+, PostgreSQL 16.
+Requer Node 20+.
 
 ```bash
-# Banco
-createuser -P borcelle            # senha: borcelle
-createdb -O borcelle borcelle
-
-# Backend
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-alembic upgrade head
-python -m app.seed
-uvicorn app.main:app --reload --port 8000
-
-# Frontend (outro terminal)
-cd frontend
-cp .env.example .env.local
 npm install
 npm run dev
 ```
 
-## Testes
+Abra http://localhost:3000. Para apresentar no celular, publique na Vercel: importe este repositório em vercel.com/new e clique em **Deploy** (sem nenhuma configuração).
 
-```bash
-createdb -O borcelle borcelle_test
-cd backend && pytest -q
-```
+## Personalizar
 
-Os 18 testes rodam contra um PostgreSQL real, com o Mercado Pago simulado. Cobrem: preço recalculado no servidor, grupos obrigatórios e limites, opção de outro produto, produto indisponível, CEP fora da área, cupons (percentual, mínimo, esgotado), total divergente, troco, idempotência, loja fechada e agendamento, PIX aprovado por webhook assinado, assinatura inválida, webhook duplicado, cartão recusado com nova tentativa, parcelas, PIX expirado, transições de status, estorno e métodos desligados sem credenciais.
+Tudo em `src/lib/mock/data.ts`:
 
-Para testar pagamentos no **sandbox real** do Mercado Pago, siga [docs/PAGAMENTOS.md](docs/PAGAMENTOS.md).
+- **Produtos, preços, categorias e adicionais**
+- **Fotos:** preencha `image` em cada produto com o caminho de uma imagem em `public/images/` (ex.: `image: "/images/double-bacon.webp"`). Sem foto, aparece uma ilustração da marca.
+- **Foto do hero:** salve `public/images/hero.webp` (produto recortado, fundo transparente).
+- **Regiões de entrega, taxas e cupons**
+- **Dados da loja** (endereço, WhatsApp, tempo de preparo)
 
-## O que depende de credenciais externas
+## Versão completa
 
-| Recurso | Variável | Sem a credencial |
-|---|---|---|
-| PIX, cartão online, carteira Mercado Pago | `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY` | Formas online somem do checkout; um aviso aparece no topo do site. Dinheiro e cartão na entrega continuam funcionando. |
-| Confirmação por webhook | `MP_WEBHOOK_SECRET` + `PUBLIC_API_URL` em HTTPS | Webhooks são recusados; a reconciliação automática (a cada 60 s) e o botão "Já paguei" confirmam o pagamento consultando o Mercado Pago. |
-| Autocompletar endereço | ViaCEP (público, sem chave) | Cliente digita o endereço; a área de entrega continua validada pela faixa de CEP. |
-| Notificações no WhatsApp | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | Nenhuma mensagem é enviada; o botão "Falar no WhatsApp" continua. |
-| Meta Conversions API | `META_PIXEL_ID`, `META_CAPI_TOKEN` | Sem envio server-side. |
-| GA4 / GTM / Meta Pixel | `NEXT_PUBLIC_GTM_ID`, `NEXT_PUBLIC_META_PIXEL_ID` | Scripts não carregam. Com IDs, só carregam após o aceite de cookies. |
+A branch [`plataforma-completa`](../../tree/plataforma-completa) guarda a versão com backend real (FastAPI + PostgreSQL, Mercado Pago com webhooks, testes automatizados), caso o projeto avance além do protótipo.
 
-Pagamentos **nunca** são simulados como aprovados. Com credenciais `TEST-...`, o site mostra "Ambiente de testes".
+## Stack
 
-## Fotos dos produtos
-
-Enquanto as fotos não são cadastradas, o site mostra uma ilustração da marca. Para incluir:
-
-- **Hero:** salve `frontend/public/images/hero.webp` (produto recortado, fundo transparente, ~1600 px de largura) e gere o build de novo.
-- **Produtos:** preencha `image_url` de cada produto (URL pública WebP/AVIF, quadrada, ≥ 800 px). Na fase 2 isso é feito pelo painel com upload.
-
-## Publicação
-
-Veja [docs/PUBLICACAO.md](docs/PUBLICACAO.md).
-
-## Documentação
-
-- [Arquitetura e banco de dados](docs/ARQUITETURA.md)
-- [Pagamentos e Mercado Pago](docs/PAGAMENTOS.md)
-- [Operação da loja (fase 1)](docs/OPERACAO.md)
-- [Publicação em produção](docs/PUBLICACAO.md)
+Next.js 15 · React 19 · TypeScript · Tailwind CSS · GSAP + ScrollTrigger · Zustand · React Hook Form + Zod
